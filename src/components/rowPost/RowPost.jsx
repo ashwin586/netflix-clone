@@ -1,17 +1,71 @@
-import React from "react";
-import './RowPost.css'
+import React, { useEffect, useState } from "react";
+import {API_KEY, imageURL } from "../../constants/constants";
+import axios from "../../axios";
+import Youtube from "react-youtube";
+import "./RowPost.css";
 
-function RowPost() {
+function RowPost(props) {
+  const [movie, setMovies] = useState([]);
+  const [urlId, setUrlId] = useState("");
+
+  useEffect(() => {
+    try {
+      async function rowPost() {
+        try {
+          const response = await axios.get(props.url);
+          setMovies(response.data.results);
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      rowPost();
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
+  const opts = {
+    height: "390",
+    width: "100%",
+    playerVars: {
+      autoplay: 0,
+    },
+  };
+
+  function handleMovie(id) {
+    console.log(id);
+    async function trailerFetch() {
+      try {
+        const response = await axios.get(`movie/${id}/videos?api_key=${API_KEY}&language=en-US`)
+        if(response.data.results.length!==0){
+            setUrlId(response.data.results[0])
+        } else {
+            alert('Trailer not available')
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    trailerFetch();
+  }
+
   return (
     <>
       <div className="row">
-        <h2>Title</h2>
+        <h2>{props.title}</h2>
         <div className="posters">
-          <img className="poster"
-            src="https://images.squarespace-cdn.com/content/v1/59232e19579fb3fa44a693c2/1589212826160-UM9PEPGOS3OJPR0FJ81X/ke17ZwdGBToddI8pDm48kHZUaJeKzodyg_sXWBMxNTdZw-zPPgdn4jUwVcJE1ZvWQUxwkmyExglNqGp0IvTJZUJFbgE-7XRK3dMEBRBhUpxCBUU7B-_SAG1kGvCwYgmUjQXvn8_OJjtz3K1llMQBa1MPsuSXPSY3X-tgg78M7lI/SKOyqL1qFLIhbK6ho2lB-696x975.jpg?format=1500w"
-            alt="poster"
-          />
+          {movie.map((obj, index) => (
+            <img
+              key={index + 1}
+              onClick={() => handleMovie(obj.id)}
+              className={props.isSmall ? "small-poster" : "poster"}
+              src={`${imageURL + obj.backdrop_path}`}
+              alt="poster"
+            />
+          ))}
         </div>
+        { urlId && <Youtube videoId={urlId.key} opts={opts} />}
       </div>
     </>
   );
